@@ -1,0 +1,23 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch",
+            // "type": "coreclr",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/target/debug/${workspaceFolderBasename}",
+            "args": [
+                "/home/walter/Projects/pust/script/1.py"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": true,
+            // "sourceFileMap": {
+            //     "/rustc/fc50f328b0353b285421b8ff5d4100966387a997/src": "C:/Users/zhaohy/.rustup/toolchains/stable-x86_64-pc-windows-gnu/lib/rustlib/src/rust/src",
+            // },
+            "preLaunchTask": "cargo build",
+        }
+    ]
+}
