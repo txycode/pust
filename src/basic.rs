@@ -53,7 +53,7 @@ impl Lexer<'_> {
                     self.advance()
                 }
                 '-' => {
-                    tokens.push(Token::Plus);
+                    tokens.push(Token::Minus);
                     self.advance()
                 }
                 '*' => {
