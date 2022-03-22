@@ -16,7 +16,7 @@ fn main() {
     if let Ok(lines) = read_lines(p) {
         for line in lines {
             if let Ok(text) = line {
-                run(&args.path.as_path().display().to_string(), &text);
+                run(args.path.as_path().display().to_string(), text);
             }
         }
     }
