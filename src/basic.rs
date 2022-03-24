@@ -14,7 +14,10 @@ pub fn run<'a>(f: String, text: String) {
             // println!("{:?}", ast);
             // println!("{:?}", tokens);
             let v = match ast {
-                Ok(node) => Interpreter.evaluate(node),
+                Ok(node) => {
+                    println!("{:?}", node);
+                    Interpreter.evaluate(node)
+                }
                 Err(error) => Err(error), // Err(error) => println!("{:?}", error),
             };
             match v {

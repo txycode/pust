@@ -6,7 +6,7 @@ pub struct Parser<'a> {
     pub index: usize,
 }
 
-type ParseResult = Result<Box<ASTNode>, Error>;
+type ParseResult = Result<Box<ASTNode>, Box<Error>>;
 
 impl<'a> Parser<'a> {
     fn advance(&mut self) {
@@ -127,8 +127,8 @@ impl<'a> Parser<'a> {
                 r
             }
             Token::Plus { value: _ } | Token::Minus { value: _ } => {
-                self.advance();
                 let current_token = self.get_current_token();
+                self.advance();
                 let posctx = self.get_current_posctx();
                 let parse_result = self.factor();
                 if let Ok(node) = parse_result {
@@ -151,29 +151,25 @@ impl<'a> Parser<'a> {
                             self.advance();
                             return Ok(node);
                         }
-                        _ => {
-                            return Err(Error::InvalidSyntax {
-                                ctx: self.get_current_posctx(),
-                                detail: String::from(format!(
-                                    "Got: '{:?}', Expect: ')'",
-                                    current_token
-                                )),
-                            })
-                        }
+                        _ => Err(Box::new(Error::InvalidSyntax {
+                            ctx: self.get_current_posctx(),
+                            detail: String::from(format!(
+                                "Got: '{:?}', Expect: ')'",
+                                current_token
+                            )),
+                        })),
                     }
                 } else {
                     return parse_result;
                 }
             }
-            _ => {
-                return Err(Error::InvalidSyntax {
-                    ctx: self.get_current_posctx(),
-                    detail: String::from(format!(
-                        "Got: '{:?}', Expect: '(', '+', '-', 'float', 'int'",
-                        token
-                    )),
-                })
-            }
+            _ => Err(Box::new(Error::InvalidSyntax {
+                ctx: self.get_current_posctx(),
+                detail: String::from(format!(
+                    "Got: '{:?}', Expect: '(', '+', '-', 'float', 'int'",
+                    token
+                )),
+            })),
         }
     }
 }

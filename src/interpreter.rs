@@ -12,7 +12,7 @@ pub enum NumValue {
     Float { value: f64, ctx: Box<PosCtx> },
 }
 
-type RTResutl = Result<NumValue, Error>;
+type RTResutl = Result<NumValue, Box<Error>>;
 
 impl NumValue {
     pub fn added_by(&self, num_value: &NumValue) -> RTResutl {
@@ -117,10 +117,10 @@ impl NumValue {
                                 ctx,
                             })
                         } else {
-                            Err(Error::DivdedByZero {
+                            Err(Box::new(Error::DivdedByZero {
                                 ctx,
                                 detail: "Divided by zero".to_string(),
-                            })
+                            }))
                         }
                     }
                     NumValue::Float { value, ctx } => {
@@ -131,10 +131,10 @@ impl NumValue {
                                 ctx,
                             })
                         } else {
-                            Err(Error::DivdedByZero {
+                            Err(Box::new(Error::DivdedByZero {
                                 ctx,
                                 detail: "Divided by zero".to_string(),
-                            })
+                            }))
                         }
                     }
                 }
@@ -151,10 +151,10 @@ impl NumValue {
                                 ctx,
                             })
                         } else {
-                            Err(Error::DivdedByZero {
+                            Err(Box::new(Error::DivdedByZero {
                                 ctx,
                                 detail: "Divided by zero".to_string(),
-                            })
+                            }))
                         }
                     }
                     NumValue::Float { value, ctx } => {
@@ -165,10 +165,10 @@ impl NumValue {
                                 ctx,
                             })
                         } else {
-                            Err(Error::DivdedByZero {
+                            Err(Box::new(Error::DivdedByZero {
                                 ctx,
                                 detail: "Divided by zero".to_string(),
-                            })
+                            }))
                         }
                     }
                 }
@@ -220,7 +220,16 @@ impl NumValue {
         }
     }
     pub fn inverse(&self) -> RTResutl {
-        todo!()
+        match self {
+            NumValue::BigInt { value, ctx } => Ok(NumValue::BigInt {
+                value: -value.clone(),
+                ctx: ctx.clone(),
+            }),
+            NumValue::Float { value, ctx } => Ok(NumValue::Float {
+                value: -value,
+                ctx: ctx.clone(),
+            }),
+        }
     }
 }
 
@@ -246,10 +255,10 @@ impl Interpreter {
         match *token {
             Token::Int { value } => Ok(NumValue::BigInt { value, ctx: posctx }),
             Token::Float { value } => Ok(NumValue::Float { value, ctx: posctx }),
-            _ => Err(Error::TokenNotMatch {
+            _ => Err(Box::new(Error::TokenNotMatch {
                 ctx: posctx,
                 detail: String::from(format!("Got {:?}, Expect 'Int', 'Float'", *token)),
-            }),
+            })),
         }
     }
     pub fn visit_binop(
@@ -308,10 +317,10 @@ impl Interpreter {
             Token::Minus { value: _ } => left_value.subed_by(&right_value),
             Token::Mul { value: _ } => left_value.multed_by(&right_value),
             Token::Div { value: _ } => left_value.divded_by(&right_value),
-            _ => Err(Error::TokenNotMatch {
+            _ => Err(Box::new(Error::TokenNotMatch {
                 ctx: cur_posctx,
                 detail: String::from(format!("Got {:?}, Expect '+', '-', '*', '/'", *token)),
-            }),
+            })),
         }
     }
     pub fn visit_unary(
@@ -345,10 +354,10 @@ impl Interpreter {
         match *token {
             Token::Plus { value: _ } => Ok(cur_value),
             Token::Minus { value: _ } => cur_value.inverse(),
-            _ => Err(Error::TokenNotMatch {
+            _ => Err(Box::new(Error::TokenNotMatch {
                 ctx: cur_posctx,
                 detail: String::from(format!("Got {:?}, Expect '+', '-'", *token)),
-            }),
+            })),
         }
     }
 }

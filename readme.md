@@ -15,7 +15,7 @@
 expr    ->  term ((PLUS | MINUS) term)*
 term    ->  factor ((MUL | DIV) factor)*
 factor  ->  INT | FLOAT
-        ->  (PLUS | MINUS) factor
+        ->  (PLUS | MINUS)* factor
         ->  LPAR expr RPAR
 ```
 
