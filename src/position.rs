@@ -24,3 +24,12 @@ impl Position {
         }
     }
 }
+
+impl PosCtx {
+    pub fn merge(&self, other: &Box<PosCtx>) -> Box<PosCtx> {
+        Box::new(PosCtx {
+            pos_start: self.pos_start.clone(),
+            pos_end: other.pos_end.clone(),
+        })
+    }
+}

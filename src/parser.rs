@@ -32,8 +32,9 @@ impl<'a> Parser<'a> {
             Err(error)
         } else {
             loop {
-                let tk = self.get_current_token();
-                match *tk {
+                let token = self.get_current_token();
+                let posctx = self.get_current_posctx();
+                match *token {
                     // Token::EndOfFile => {
                     //     break;
                     // }
@@ -44,7 +45,8 @@ impl<'a> Parser<'a> {
                             return Err(error);
                         } else {
                             left = Ok(Box::new(ASTNode::BinOp {
-                                token: tk,
+                                token,
+                                posctx,
                                 left: left.unwrap(),
                                 right: right.unwrap(),
                             }));
@@ -71,8 +73,9 @@ impl<'a> Parser<'a> {
             Err(error)
         } else {
             loop {
-                let tk = self.get_current_token();
-                match *tk {
+                let token = self.get_current_token();
+                let posctx = self.get_current_posctx();
+                match *token {
                     // Token::EndOfFile => {
                     //     break;
                     // }
@@ -83,7 +86,8 @@ impl<'a> Parser<'a> {
                             return Err(error);
                         } else {
                             left = Ok(Box::new(ASTNode::BinOp {
-                                token: tk,
+                                token,
+                                posctx,
                                 left: left.unwrap(),
                                 right: right.unwrap(),
                             }));
@@ -106,8 +110,9 @@ impl<'a> Parser<'a> {
     }
 
     pub fn factor(&mut self) -> ParseResult {
-        let tk = self.get_current_token();
-        match *tk {
+        let token = self.get_current_token();
+        let posctx = self.get_current_posctx();
+        match *token {
             // None => {
             //     return Err(Error::InvalidSyntax {
             //         ctx: None,
@@ -117,17 +122,19 @@ impl<'a> Parser<'a> {
             //     })
             // }
             Token::Int { value: _ } | Token::Float { value: _ } => {
-                let r = Ok(Box::new(ASTNode::Number { token: tk }));
+                let r = Ok(Box::new(ASTNode::Number { token, posctx }));
                 self.advance();
                 r
             }
             Token::Plus { value: _ } | Token::Minus { value: _ } => {
                 self.advance();
-                let next_tk = self.get_current_token();
+                let current_token = self.get_current_token();
+                let posctx = self.get_current_posctx();
                 let parse_result = self.factor();
                 if let Ok(node) = parse_result {
                     Ok(Box::new(ASTNode::Unary {
-                        token: next_tk,
+                        token: current_token,
+                        posctx,
                         node,
                     }))
                 } else {
@@ -137,9 +144,9 @@ impl<'a> Parser<'a> {
             Token::Lpar { value: _ } => {
                 self.advance();
                 let parse_result = self.expr();
-                let next_tk = self.get_current_token();
+                let current_token = self.get_current_token();
                 if let Ok(node) = parse_result {
-                    match *next_tk {
+                    match *current_token {
                         Token::Rpar { value: _ } => {
                             self.advance();
                             return Ok(node);
@@ -147,7 +154,10 @@ impl<'a> Parser<'a> {
                         _ => {
                             return Err(Error::InvalidSyntax {
                                 ctx: self.get_current_posctx(),
-                                detail: String::from(format!("Got: '{:?}', Expect: ')'", next_tk)),
+                                detail: String::from(format!(
+                                    "Got: '{:?}', Expect: ')'",
+                                    current_token
+                                )),
                             })
                         }
                     }
@@ -160,7 +170,7 @@ impl<'a> Parser<'a> {
                     ctx: self.get_current_posctx(),
                     detail: String::from(format!(
                         "Got: '{:?}', Expect: '(', '+', '-', 'float', 'int'",
-                        tk
+                        token
                     )),
                 })
             }
