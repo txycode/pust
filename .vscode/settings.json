@@ -1,4 +1,13 @@
 {
     "debug.allowBreakpointsEverywhere": true,
     "editor.formatOnSave": true,
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        "**/target": true,
+    }
 }

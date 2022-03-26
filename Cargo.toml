@@ -9,3 +9,8 @@ edition = "2021"
 num-bigint = { version = "0.4" }
 num-traits = { version = "0.2.14" }
 clap = { version = "3.1.6", features = ["derive"] }
+procmacro = {path="./procmacro"}
+
+[[test]]
+name = "tests"
+path = "tests/program.rs"

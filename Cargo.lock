@@ -177,12 +177,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "procmacro"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "pust"
 version = "0.1.0"
 dependencies = [
  "clap",
  "num-bigint",
  "num-traits",
+ "procmacro",
 ]
 
 [[package]]
