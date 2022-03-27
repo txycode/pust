@@ -10,5 +10,8 @@ pub enum Token {
     Div { value: char },
     Lpar { value: char },
     Rpar { value: char },
+    Assign { value: char },
+    Pow { value: String },
+    Ident { value: String },
     EndOfFile,
 }

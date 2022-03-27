@@ -1,7 +1,14 @@
-use pust::{interpreter::Interpreter, lexer::Lexer, parser::Parser};
+use pust::{interpreter::Interpreter, lexer::Lexer, parser::Parser, symbol_table::SymbolTable};
 
-pub fn run<'a>(f: String, text: String) {
+pub fn init() -> Interpreter {
+    Interpreter {
+        st: SymbolTable::new(),
+    }
+}
+
+pub fn run<'a>(f: String, text: String, interpreter: &'a mut Interpreter) {
     let mut lexer = Lexer::new(f, text);
+
     let r = lexer.make_tokens();
     match r {
         Ok((tokens, posctxs)) => {
@@ -10,13 +17,13 @@ pub fn run<'a>(f: String, text: String) {
                 posctxs: &posctxs,
                 index: 0,
             };
+            // println!("{:?}", tokens);
             let ast = parsor.parse();
             // println!("{:?}", ast);
-            // println!("{:?}", tokens);
             let v = match ast {
                 Ok(node) => {
-                    println!("{:?}", node);
-                    Interpreter.evaluate(node)
+                    // println!("{:?}", node);
+                    interpreter.evaluate(node)
                 }
                 Err(error) => Err(error), // Err(error) => println!("{:?}", error),
             };

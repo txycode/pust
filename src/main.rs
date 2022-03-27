@@ -1,4 +1,4 @@
-use basic::run;
+use basic::{init, run};
 use clap::Parser;
 use std::{fs::File, io, io::BufRead, path::Path};
 mod basic;
@@ -13,10 +13,15 @@ struct Args {
 fn main() {
     let args = Args::parse();
     let p = args.path.as_path().display().to_string();
+    let mut interpreter = init();
     if let Ok(lines) = read_lines(p) {
         for line in lines {
             if let Ok(text) = line {
-                run(args.path.as_path().display().to_string(), text);
+                run(
+                    args.path.as_path().display().to_string(),
+                    text,
+                    &mut interpreter,
+                );
             }
         }
     }

@@ -15,7 +15,7 @@
 expr    ->  term ((PLUS | MINUS) term)*
 term    ->  factor ((MUL | DIV) factor)*
 factor  ->  INT | FLOAT
-        ->  (PLUS | MINUS)* factor
+        ->  (PLUS | MINUS) factor
         ->  LPAR expr RPAR
 ```
 
@@ -32,3 +32,20 @@ factor  ->  INT | FLOAT
 - 实现简单算数器的解释执行
 - 还需添加测试
 - 需要学习宏和范型减少重复代码
+
+## dev-v4.01
+
+- 实现变量声明赋值读取
+- 实现power运算
+  
+```BNF
+expr    ->  IDENTIFIER EQ expr
+        ->  term ((PLUS | MINUS) term)*
+term    ->  factor ((MUL | DIV) factor)*
+factor  ->  (PLUS | MINUS) factor
+        ->  power
+power   -> atom (POW factor)*
+        
+atom    ->  INT | FLOAT | IDENTIFIER
+        ->  LPAR expr RPAR
+```

@@ -6,4 +6,5 @@ pub enum Error {
     InvalidSyntax { ctx: Box<PosCtx>, detail: String },
     TokenNotMatch { ctx: Box<PosCtx>, detail: String },
     DivdedByZero { ctx: Box<PosCtx>, detail: String },
+    UndefinedVariable { ctx: Box<PosCtx>, detail: String },
 }

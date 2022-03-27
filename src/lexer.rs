@@ -13,12 +13,17 @@ impl Lexer {
     pub fn make_tokens(&mut self) -> Result<(Vec<Box<Token>>, Vec<Box<PosCtx>>), Box<Error>> {
         let mut tokens: Vec<Box<Token>> = vec![];
         let mut posctxs: Vec<Box<PosCtx>> = vec![];
-        self.advance();
+        self.advance(1);
         while self.cur_char != '\0' {
             let cur_pos = self.pos.clone();
             match self.cur_char {
                 ' ' | '\t' => {
-                    self.advance();
+                    self.advance(1);
+                }
+                'a'..='z' | 'A'..='Z' | '_' => {
+                    let (token, postctx) = self.make_idents();
+                    tokens.push(Box::new(token));
+                    posctxs.push(Box::new(postctx));
                 }
                 '0'..='9' => {
                     let (token, postctx) = self.make_numbers();
@@ -31,7 +36,7 @@ impl Lexer {
                         pos_start: cur_pos.clone(),
                         pos_end: cur_pos,
                     }));
-                    self.advance();
+                    self.advance(1);
                 }
                 '-' => {
                     tokens.push(Box::new(Token::Minus { value: '-' }));
@@ -39,15 +44,27 @@ impl Lexer {
                         pos_start: cur_pos.clone(),
                         pos_end: cur_pos,
                     }));
-                    self.advance();
+                    self.advance(1);
                 }
                 '*' => {
-                    tokens.push(Box::new(Token::Mul { value: '*' }));
-                    posctxs.push(Box::new(PosCtx {
-                        pos_start: cur_pos.clone(),
-                        pos_end: cur_pos,
-                    }));
-                    self.advance();
+                    let next_char = self.peek();
+                    if next_char == '*' {
+                        tokens.push(Box::new(Token::Pow {
+                            value: "**".to_string(),
+                        }));
+                        self.advance(2);
+                        posctxs.push(Box::new(PosCtx {
+                            pos_start: cur_pos.clone(),
+                            pos_end: self.pos.clone(),
+                        }));
+                    } else {
+                        tokens.push(Box::new(Token::Mul { value: '*' }));
+                        posctxs.push(Box::new(PosCtx {
+                            pos_start: cur_pos.clone(),
+                            pos_end: cur_pos,
+                        }));
+                        self.advance(1);
+                    }
                 }
                 '/' => {
                     tokens.push(Box::new(Token::Div { value: '/' }));
@@ -55,7 +72,15 @@ impl Lexer {
                         pos_start: cur_pos.clone(),
                         pos_end: cur_pos,
                     }));
-                    self.advance();
+                    self.advance(1);
+                }
+                '=' => {
+                    tokens.push(Box::new(Token::Assign { value: '=' }));
+                    posctxs.push(Box::new(PosCtx {
+                        pos_start: cur_pos.clone(),
+                        pos_end: cur_pos,
+                    }));
+                    self.advance(1);
                 }
                 '(' => {
                     tokens.push(Box::new(Token::Lpar { value: '(' }));
@@ -63,7 +88,7 @@ impl Lexer {
                         pos_start: cur_pos.clone(),
                         pos_end: cur_pos,
                     }));
-                    self.advance();
+                    self.advance(1);
                 }
                 ')' => {
                     tokens.push(Box::new(Token::Rpar { value: ')' }));
@@ -71,11 +96,11 @@ impl Lexer {
                         pos_start: cur_pos.clone(),
                         pos_end: cur_pos,
                     }));
-                    self.advance();
+                    self.advance(1);
                 }
                 _ => {
                     let pos_start = self.pos.clone();
-                    self.advance();
+                    self.advance(1);
                     return Err(Box::new(Error::IllegalChar {
                         ctx: Box::new(PosCtx {
                             pos_start,
@@ -94,7 +119,7 @@ impl Lexer {
         }));
         Ok((tokens, posctxs))
     }
-    pub fn make_numbers(&mut self) -> (Token, PosCtx) {
+    fn make_numbers(&mut self) -> (Token, PosCtx) {
         let mut num_chars: Vec<char> = vec![];
 
         let mut dot_count = 0u32;
@@ -117,7 +142,7 @@ impl Lexer {
                     break;
                 }
             }
-            self.advance()
+            self.advance(1)
         }
         let num_str = String::from_iter(num_chars);
         if dot_count == 0 {
@@ -142,17 +167,40 @@ impl Lexer {
             )
         }
     }
-    pub fn advance(&mut self) {
-        self.pos.advance(self.cur_char);
-        if self.pos.idx <= self.pos.len {
-            self.cur_char = self
-                .pos
-                .text
-                .chars()
-                .nth((self.pos.idx - 1) as usize)
-                .unwrap();
+
+    fn make_idents(&mut self) -> (Token, PosCtx) {
+        let mut ident = String::new();
+        let cur_pos = self.pos.clone();
+        while (self.cur_char.is_alphanumeric() || self.cur_char == '_') && self.cur_char != '\0' {
+            ident.push(self.cur_char);
+            self.advance(1);
+        }
+        (
+            Token::Ident { value: ident },
+            PosCtx {
+                pos_start: cur_pos,
+                pos_end: self.pos.clone(),
+            },
+        )
+    }
+
+    pub fn advance(&mut self, mut step: u128) {
+        while step > 0 {
+            self.pos.advance(self.cur_char);
+            if self.pos.idx <= self.pos.len {
+                self.cur_char = self.pos.text.chars().nth(self.pos.idx - 1).unwrap();
+            } else {
+                self.cur_char = '\0';
+            }
+            step -= 1;
+        }
+    }
+
+    pub fn peek(&mut self) -> char {
+        if self.pos.idx < self.pos.len {
+            self.pos.text.chars().nth(self.pos.idx).unwrap()
         } else {
-            self.cur_char = '\0';
+            '\0'
         }
     }
 

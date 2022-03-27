@@ -18,4 +18,13 @@ pub enum ASTNode {
         posctx: Box<PosCtx>,
         node: Box<ASTNode>,
     },
+    Assign {
+        token: Box<Token>,
+        posctx: Box<PosCtx>,
+        value: Box<ASTNode>,
+    },
+    Access {
+        token: Box<Token>,
+        posctx: Box<PosCtx>,
+    },
 }

@@ -13,6 +13,14 @@ impl<'a> Parser<'a> {
         self.index += 1;
     }
 
+    fn peek(&mut self) -> Box<Token> {
+        if self.index < self.tokens.len() {
+            self.tokens[self.index].clone()
+        } else {
+            Token::EndOfFile.into()
+        }
+    }
+
     fn get_current_token(&self) -> Box<Token> {
         return self.tokens[self.index - 1].clone();
     }
@@ -27,146 +35,169 @@ impl<'a> Parser<'a> {
     }
 
     fn expr(&mut self) -> ParseResult {
-        let mut left = self.term();
-        if let Err(error) = left {
-            Err(error)
-        } else {
-            loop {
-                let token = self.get_current_token();
-                let posctx = self.get_current_posctx();
-                match *token {
-                    // Token::EndOfFile => {
-                    //     break;
-                    // }
-                    Token::Plus { value: _ } | Token::Minus { value: _ } => {
-                        self.advance();
-                        let right = self.term();
-                        if let Err(error) = right {
-                            return Err(error);
-                        } else {
-                            left = Ok(Box::new(ASTNode::BinOp {
-                                token,
-                                posctx,
-                                left: left.unwrap(),
-                                right: right.unwrap(),
-                            }));
+        let token = self.get_current_token();
+        let posctx = self.get_current_posctx();
+
+        match *token {
+            Token::Ident { value: _ } => match *self.peek() {
+                Token::Assign { value: _ } => {
+                    self.advance();
+                    self.advance();
+                    let value_node = self.expr()?;
+                    return Ok(Box::new(ASTNode::Assign {
+                        token: token,
+                        posctx: posctx.merge(&self.get_current_posctx()),
+                        value: value_node,
+                    }));
+                }
+                _ => {
+                    let mut left = self.term()?;
+                    loop {
+                        let token = self.get_current_token();
+                        let posctx = self.get_current_posctx();
+                        match *token {
+                            Token::Plus { value: _ } | Token::Minus { value: _ } => {
+                                self.advance();
+                                let right = self.term()?;
+
+                                left = Box::new(ASTNode::BinOp {
+                                    token,
+                                    posctx,
+                                    left: left,
+                                    right: right,
+                                });
+                            }
+                            _ => {
+                                break;
+                            }
                         }
                     }
-                    _ => {
-                        break;
-                        // return Err(Error::InvalidSyntax {
-                        //     ctx: Some(self.current_posctx.clone()),
-                        //     detail: String::from(format!(
-                        //         "Got: '{:?}', Expect: '+', '-'",
-                        //         self.current_token
-                        //     )),
-                        // })
+                    Ok(left)
+                }
+            },
+            _ => {
+                let mut left = self.term()?;
+                loop {
+                    let token = self.get_current_token();
+                    let posctx = self.get_current_posctx();
+                    match *token {
+                        Token::Plus { value: _ } | Token::Minus { value: _ } => {
+                            self.advance();
+                            let right = self.term()?;
+
+                            left = Box::new(ASTNode::BinOp {
+                                token,
+                                posctx,
+                                left: left,
+                                right: right,
+                            });
+                        }
+                        _ => {
+                            break;
+                        }
                     }
                 }
+                Ok(left)
             }
-            left
         }
     }
     pub fn term(&mut self) -> ParseResult {
-        let mut left = self.factor();
-        if let Err(error) = left {
-            Err(error)
-        } else {
-            loop {
-                let token = self.get_current_token();
-                let posctx = self.get_current_posctx();
-                match *token {
-                    // Token::EndOfFile => {
-                    //     break;
-                    // }
-                    Token::Mul { value: _ } | Token::Div { value: _ } => {
-                        self.advance();
-                        let right = self.factor();
-                        if let Err(error) = right {
-                            return Err(error);
-                        } else {
-                            left = Ok(Box::new(ASTNode::BinOp {
-                                token,
-                                posctx,
-                                left: left.unwrap(),
-                                right: right.unwrap(),
-                            }));
-                        }
-                    }
-                    _ => {
-                        break;
-                        // return Err(Error::InvalidSyntax {
-                        //     ctx: Some(self.current_posctx.clone()),
-                        //     detail: String::from(format!(
-                        //         "Got: '{:?}', Expect: '*', '/'",
-                        //         self.current_token
-                        //     )),
-                        // })
-                    }
+        let mut left = self.factor()?;
+
+        loop {
+            let token = self.get_current_token();
+            let posctx = self.get_current_posctx();
+            match *token {
+                Token::Mul { value: _ } | Token::Div { value: _ } => {
+                    self.advance();
+                    let right = self.factor()?;
+                    left = Box::new(ASTNode::BinOp {
+                        token,
+                        posctx,
+                        left: left,
+                        right: right,
+                    });
+                }
+                _ => {
+                    break;
                 }
             }
-            left
         }
+        Ok(left)
     }
 
     pub fn factor(&mut self) -> ParseResult {
         let token = self.get_current_token();
-        let posctx = self.get_current_posctx();
         match *token {
-            // None => {
-            //     return Err(Error::InvalidSyntax {
-            //         ctx: None,
-            //         detail: String::from(format!(
-            //             "Missing Token: 'None', Expect '+', '-', '(', 'float', 'int'"
-            //         )),
-            //     })
-            // }
-            Token::Int { value: _ } | Token::Float { value: _ } => {
-                let r = Ok(Box::new(ASTNode::Number { token, posctx }));
-                self.advance();
-                r
-            }
             Token::Plus { value: _ } | Token::Minus { value: _ } => {
                 let current_token = self.get_current_token();
                 self.advance();
                 let posctx = self.get_current_posctx();
-                let parse_result = self.factor();
-                if let Ok(node) = parse_result {
-                    Ok(Box::new(ASTNode::Unary {
-                        token: current_token,
+                let node = self.factor()?;
+                Ok(Box::new(ASTNode::Unary {
+                    token: current_token,
+                    posctx,
+                    node,
+                }))
+            }
+            _ => self.power(),
+        }
+    }
+    pub fn power(&mut self) -> ParseResult {
+        let mut left = self.atom()?;
+        loop {
+            let token = self.get_current_token();
+            let posctx = self.get_current_posctx();
+            match *token {
+                Token::Pow { value: _ } => {
+                    self.advance();
+                    let right = self.factor()?;
+                    left = Box::new(ASTNode::BinOp {
+                        token,
                         posctx,
-                        node,
-                    }))
-                } else {
-                    parse_result
+                        left: left,
+                        right: right,
+                    });
                 }
+                _ => {
+                    break;
+                }
+            }
+        }
+        Ok(left)
+    }
+
+    pub fn atom(&mut self) -> ParseResult {
+        let token = self.get_current_token();
+        let posctx = self.get_current_posctx();
+        match *token {
+            Token::Ident { value: _ } => {
+                self.advance();
+                Ok(Box::new(ASTNode::Access { token, posctx }))
+            }
+            Token::Int { value: _ } | Token::Float { value: _ } => {
+                self.advance();
+                Ok(Box::new(ASTNode::Number { token, posctx }))
             }
             Token::Lpar { value: _ } => {
                 self.advance();
-                let parse_result = self.expr();
+                let node = self.expr()?;
                 let current_token = self.get_current_token();
-                if let Ok(node) = parse_result {
-                    match *current_token {
-                        Token::Rpar { value: _ } => {
-                            self.advance();
-                            return Ok(node);
-                        }
-                        _ => Err(Box::new(Error::InvalidSyntax {
-                            ctx: self.get_current_posctx(),
-                            detail: String::from(format!(
-                                "Got: '{:?}', Expect: ')'",
-                                current_token
-                            )),
-                        })),
+                match *current_token {
+                    Token::Rpar { value: _ } => {
+                        self.advance();
+                        return Ok(node);
                     }
-                } else {
-                    return parse_result;
+                    _ => Err(Box::new(Error::InvalidSyntax {
+                        ctx: self.get_current_posctx(),
+                        detail: String::from(format!("Got: '{:?}', Expect: ')'", current_token)),
+                    })),
                 }
             }
             _ => Err(Box::new(Error::InvalidSyntax {
                 ctx: self.get_current_posctx(),
                 detail: String::from(format!(
-                    "Got: '{:?}', Expect: '(', '+', '-', 'float', 'int'",
+                    "Got: '{:?}', Expect: 'ident', 'int', 'float', '('",
                     token
                 )),
             })),
