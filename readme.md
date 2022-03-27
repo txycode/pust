@@ -37,6 +37,7 @@ factor  ->  INT | FLOAT
 
 - 实现变量声明赋值读取
 - 实现power运算
+- 实现符号表
   
 ```BNF
 expr    ->  IDENTIFIER EQ expr
