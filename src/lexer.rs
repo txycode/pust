@@ -75,12 +75,9 @@ impl Lexer {
                     self.advance(1);
                 }
                 '=' => {
-                    tokens.push(Box::new(Token::Assign { value: '=' }));
-                    posctxs.push(Box::new(PosCtx {
-                        pos_start: cur_pos.clone(),
-                        pos_end: cur_pos,
-                    }));
-                    self.advance(1);
+                    let (token, postctx) = self.make_equality();
+                    tokens.push(Box::new(token));
+                    posctxs.push(Box::new(postctx));
                 }
                 '(' => {
                     tokens.push(Box::new(Token::Lpar { value: '(' }));
@@ -97,6 +94,32 @@ impl Lexer {
                         pos_end: cur_pos,
                     }));
                     self.advance(1);
+                }
+                '>' | '<' => {
+                    let (token, postctx) = self.make_comparison();
+                    tokens.push(Box::new(token));
+                    posctxs.push(Box::new(postctx));
+                }
+                '!' => {
+                    let next_char = self.peek();
+                    if next_char == '=' {
+                        tokens.push(Box::new(Token::NotEq {
+                            value: "!=".to_string(),
+                        }));
+                        self.advance(2);
+                        posctxs.push(Box::new(PosCtx {
+                            pos_start: cur_pos.clone(),
+                            pos_end: self.pos.clone(),
+                        }));
+                    } else {
+                        return Err(Box::new(Error::IllegalChar {
+                            ctx: Box::new(PosCtx {
+                                pos_start,
+                                pos_end: self.pos.clone(),
+                            }),
+                            detail: format!("unknown character '!'"),
+                        }));
+                    }
                 }
                 _ => {
                     let pos_start = self.pos.clone();
@@ -182,6 +205,82 @@ impl Lexer {
                 pos_end: self.pos.clone(),
             },
         )
+    }
+
+    pub fn make_equality(&mut self) -> (Token, PosCtx) {
+        let cur_pos = self.pos.clone();
+        self.advance(1);
+        if self.cur_char == '=' {
+            self.advance(1);
+            (
+                Token::Eq {
+                    value: "==".to_string(),
+                },
+                PosCtx {
+                    pos_start: cur_pos,
+                    pos_end: self.pos.clone(),
+                },
+            )
+        } else {
+            (
+                Token::Assign { value: '=' },
+                PosCtx {
+                    pos_start: cur_pos,
+                    pos_end: self.pos.clone(),
+                },
+            )
+        }
+    }
+
+    pub fn make_comparison(&mut self) -> (Token, PosCtx) {
+        let cur_pos = self.pos.clone();
+        let op = self.cur_char;
+        self.advance(1);
+        if op == '>' {
+            if self.cur_char == '=' {
+                self.advance(1);
+                return (
+                    Token::GreaterEq {
+                        value: ">=".to_string(),
+                    },
+                    PosCtx {
+                        pos_start: cur_pos,
+                        pos_end: self.pos.clone(),
+                    },
+                );
+            } else {
+                return (
+                    Token::Greater { value: '>' },
+                    PosCtx {
+                        pos_start: cur_pos,
+                        pos_end: self.pos.clone(),
+                    },
+                );
+            }
+        }
+        else {
+                if self.cur_char == '=' {
+                    self.advance(1);
+                    return (
+                        Token::LessEq {
+                            value: "<=".to_string(),
+                        },
+                        PosCtx {
+                            pos_start: cur_pos,
+                            pos_end: self.pos.clone(),
+                        },
+                    );
+                } else {
+                    return (
+                        Token::Less { value: '<' },
+                        PosCtx {
+                            pos_start: cur_pos,
+                            pos_end: self.pos.clone(),
+                        },
+                    );
+                }
+            }
+        }
     }
 
     pub fn advance(&mut self, mut step: u128) {

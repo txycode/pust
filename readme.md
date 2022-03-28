@@ -50,3 +50,27 @@ power   -> atom (POW factor)*
 atom    ->  INT | FLOAT | IDENTIFIER
         ->  LPAR expr RPAR
 ```
+
+## dev-v4.02
+
+- 实现比较运算符
+
+```BNF
+expr            ->      IDENTIFIER EQ expr
+                ->      comp_expr ((AND | OR) comp_expr)*
+
+comp_expr       ->      NOT comp_expr
+                ->      arith_expr ((EE | NE | GT | LT | GTE | LTE) arith_expr)*
+
+arith_expr      ->      term ((PLUS | MINUS) term)*
+
+term            ->      factor ((MUL | DIV) factor)*
+
+factor          ->      (PLUS | MINUS) factor
+                ->      power
+
+power           ->      atom (POW factor)*
+        
+atom            ->      INT | FLOAT | IDENTIFIER
+                ->      LPAR expr RPAR
+```

@@ -8,7 +8,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/target/debug/${workspaceFolderBasename}",
             "args": [
-                "/home/walter/Projects/pust/script/1.py"
+                "${workspaceFolder}/script/1.py"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
